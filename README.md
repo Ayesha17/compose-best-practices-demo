@@ -20,21 +20,20 @@ When the user types in a `TextField`, only form-related nodes should recompose. 
 
 ### 2. What params should each function take?
 
-Prefer **the smallest slice**:
+Prefer **the smallest slice** + **grouped actions**:
 
-- Specific values: `title: String` when that is all you need
-- Section state: `HeaderUiState` when the section has several related fields
-- **Never** pass the entire `DemoUiState` into every child
-
-**If values exceed ~7–10 (or especially 20+):** group by domain into small immutable objects:
-
-```text
-ProfileFormState / AddressFormState / PreferencesFormState
+```kotlin
+MiddleView(state: MiddleUiState, actions: MiddleUiActions, modifier)
 ```
 
-Not one mega-object with 40 fields that dirties the whole `MiddleView`.
+Not 9–20 loose params (`form`, `items`, `onUsernameChange`, …).
 
-Pass **events as lambdas** (or a stable `DemoUiActions`), not the whole `ViewModel`.
+- Specific values: `title: String` when that is all you need
+- Section state: `MiddleUiState` / `HeaderUiState` for related fields
+- Section actions: `MiddleUiActions` / `FormUiActions` for callbacks
+- **Never** pass the entire `DemoUiState` + whole `ViewModel` into every child
+
+If fields exceed ~10–20, group by domain (`FormUiState`, `AddressUiState`, …), not one mega object.
 
 ### 3. Group views by state / update frequency
 

@@ -11,8 +11,10 @@ import androidx.compose.runtime.Stable
  * 2. Annotate with `@Immutable` when every property is deeply immutable.
  * 3. Do NOT bind 1:1 every composable to one giant state object. Split by
  *    **change frequency / ownership** (header vs form vs list vs footer).
- * 4. When a section would need 10–20+ params, group them into a small state
- *    object (e.g. [FormUiState]) and pass that object + lambdas.
+ * 4. When a section would need many params, group into:
+ *    - section state object (e.g. [MiddleUiState])
+ *    - section actions object (e.g. [MiddleUiActions])
+ *    Prefer ~2–3 params over 10–20 individual ones.
  */
 
 @Immutable
@@ -22,14 +24,6 @@ data class HeaderUiState(
     val lastRefreshedLabel: String
 )
 
-/**
- * Form fields are grouped because they usually change together (typing)
- * and Header/Footer should not recompose when only username changes.
- *
- * If you ever need 20+ fields, keep grouping by domain:
- * ProfileFormState, AddressFormState, PreferencesFormState — not one mega object
- * with 40 fields that dirty the whole MiddleView.
- */
 @Immutable
 data class FormUiState(
     val username: String = "",
@@ -53,6 +47,19 @@ data class TableRowUiModel(
     val value: String
 )
 
+/**
+ * Everything MiddleView needs to *read*.
+ * Typing still creates a new [MiddleUiState], but children only get their slice
+ * (form / table / items) so table/list can skip when those lists are unchanged.
+ */
+@Immutable
+data class MiddleUiState(
+    val form: FormUiState = FormUiState(),
+    val tableRows: List<TableRowUiModel> = emptyList(),
+    val items: List<ListItemUiModel> = emptyList(),
+    val loadError: String? = null
+)
+
 @Immutable
 data class FooterUiState(
     val statusMessage: String,
@@ -60,10 +67,6 @@ data class FooterUiState(
     val canSubmit: Boolean
 )
 
-/**
- * Root screen state = composition of section states.
- * The screen collects this once; child composables receive ONLY their slice.
- */
 @Immutable
 data class DemoUiState(
     val header: HeaderUiState = HeaderUiState(
@@ -71,29 +74,32 @@ data class DemoUiState(
         subtitle = "Recomposition · State · Coroutines",
         lastRefreshedLabel = "Not loaded yet"
     ),
-    val form: FormUiState = FormUiState(),
-    val items: List<ListItemUiModel> = emptyList(),
-    val tableRows: List<TableRowUiModel> = emptyList(),
+    val middle: MiddleUiState = MiddleUiState(),
     val footer: FooterUiState = FooterUiState(
         statusMessage = "Idle",
         isLoading = false,
         canSubmit = false
-    ),
-    val loadError: String? = null
+    )
 )
 
-/**
- * Event callbacks stay as stable function references from the ViewModel.
- * Prefer method references (`viewModel::onUsernameChange`) over recreating
- * lambdas in every recomposition when possible.
- */
+/** Form callbacks grouped — avoid 4 separate lambda params. */
 @Stable
-data class DemoUiActions(
+data class FormUiActions(
     val onUsernameChange: (String) -> Unit,
     val onEmailChange: (String) -> Unit,
     val onCompanyChange: (String) -> Unit,
-    val onNotesChange: (String) -> Unit,
-    val onRefresh: () -> Unit,
-    val onSubmit: () -> Unit,
+    val onNotesChange: (String) -> Unit
+)
+
+/** Middle section callbacks. */
+@Stable
+data class MiddleUiActions(
+    val form: FormUiActions,
     val onItemClick: (String) -> Unit
+)
+
+@Stable
+data class FooterUiActions(
+    val onRefresh: () -> Unit,
+    val onSubmit: () -> Unit
 )

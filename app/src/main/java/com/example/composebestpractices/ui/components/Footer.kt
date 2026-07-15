@@ -18,17 +18,17 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.example.composebestpractices.state.FooterUiActions
 import com.example.composebestpractices.state.FooterUiState
 
 /**
- * Footer only sees [FooterUiState] + action lambdas.
+ * Footer only sees [FooterUiState] + [FooterUiActions].
  * Form typing may update canSubmit — then Footer recomposes; Header still skips.
  */
 @Composable
 fun DemoFooter(
     state: FooterUiState,
-    onRefresh: () -> Unit,
-    onSubmit: () -> Unit,
+    actions: FooterUiActions,
     modifier: Modifier = Modifier
 ) {
     Surface(
@@ -58,14 +58,14 @@ fun DemoFooter(
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 OutlinedButton(
-                    onClick = onRefresh,
+                    onClick = actions.onRefresh,
                     enabled = !state.isLoading,
                     modifier = Modifier.weight(1f)
                 ) {
                     Text("Refresh")
                 }
                 Button(
-                    onClick = onSubmit,
+                    onClick = actions.onSubmit,
                     enabled = state.canSubmit && !state.isLoading,
                     modifier = Modifier.weight(1f)
                 ) {

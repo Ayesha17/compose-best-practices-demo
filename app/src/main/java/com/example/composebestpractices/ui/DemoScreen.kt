@@ -9,22 +9,20 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.composebestpractices.state.DemoUiActions
+import com.example.composebestpractices.state.FooterUiActions
+import com.example.composebestpractices.state.FormUiActions
+import com.example.composebestpractices.state.MiddleUiActions
 import com.example.composebestpractices.ui.components.DemoFooter
 import com.example.composebestpractices.ui.components.DemoHeader
 import com.example.composebestpractices.ui.components.MiddleView
 import com.example.composebestpractices.viewmodel.DemoViewModel
 
 /**
- * Screen orchestration ONLY.
+ * Screen orchestration: collect once, pass section state + section actions.
  *
- * Pattern:
- * 1. Collect root state once.
- * 2. Pass **slices** (header / form / footer) — not the whole state — to children.
- * 3. Hold action lambdas in a remembered [DemoUiActions] so child stability improves.
- *
- * Header / Middle / Footer are separate functions so typing in the form
- * does not force Header to recompose when [HeaderUiState] equals the previous value.
+ *   DemoHeader(state)
+ *   MiddleView(state, actions)   ← not 9+ loose params
+ *   DemoFooter(state, actions)
  */
 @Composable
 fun DemoScreen(
@@ -32,15 +30,21 @@ fun DemoScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    val actions = remember(viewModel) {
-        DemoUiActions(
-            onUsernameChange = viewModel::onUsernameChange,
-            onEmailChange = viewModel::onEmailChange,
-            onCompanyChange = viewModel::onCompanyChange,
-            onNotesChange = viewModel::onNotesChange,
-            onRefresh = viewModel::refresh,
-            onSubmit = viewModel::submit,
+    val middleActions = remember(viewModel) {
+        MiddleUiActions(
+            form = FormUiActions(
+                onUsernameChange = viewModel::onUsernameChange,
+                onEmailChange = viewModel::onEmailChange,
+                onCompanyChange = viewModel::onCompanyChange,
+                onNotesChange = viewModel::onNotesChange
+            ),
             onItemClick = viewModel::onItemClick
+        )
+    }
+    val footerActions = remember(viewModel) {
+        FooterUiActions(
+            onRefresh = viewModel::refresh,
+            onSubmit = viewModel::submit
         )
     }
 
@@ -51,15 +55,8 @@ fun DemoScreen(
         )
 
         MiddleView(
-            form = uiState.form,
-            tableRows = uiState.tableRows,
-            items = uiState.items,
-            loadError = uiState.loadError,
-            onUsernameChange = actions.onUsernameChange,
-            onEmailChange = actions.onEmailChange,
-            onCompanyChange = actions.onCompanyChange,
-            onNotesChange = actions.onNotesChange,
-            onItemClick = actions.onItemClick,
+            state = uiState.middle,
+            actions = middleActions,
             modifier = Modifier
                 .weight(1f)
                 .fillMaxWidth()
@@ -67,8 +64,7 @@ fun DemoScreen(
 
         DemoFooter(
             state = uiState.footer,
-            onRefresh = actions.onRefresh,
-            onSubmit = actions.onSubmit,
+            actions = footerActions,
             modifier = Modifier.fillMaxWidth()
         )
     }

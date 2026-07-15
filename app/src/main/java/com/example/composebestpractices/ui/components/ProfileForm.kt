@@ -18,30 +18,22 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.example.composebestpractices.state.FormUiActions
 import com.example.composebestpractices.state.FormUiState
 
 /**
  * Form fields:
- * - Business values (username, email, …) live in ViewModel → survive process death
- *   via SavedStateHandle if you add it; here they are in StateFlow (survive rotation).
- * - rememberSaveable is for *UI-only* ephemeral state that should survive rotation
- *   but is NOT owned by the ViewModel (e.g. local expand flag, draft hint).
- *
- * Do NOT use rememberSaveable for everything — that duplicates SSOT and can desync.
+ * - Business values live in ViewModel StateFlow.
+ * - rememberSaveable is for UI-only flags, not business data.
+ * - Signature stays small: state + actions (not 4 separate lambdas).
  */
 @Composable
 fun ProfileForm(
     state: FormUiState,
-    onUsernameChange: (String) -> Unit,
-    onEmailChange: (String) -> Unit,
-    onCompanyChange: (String) -> Unit,
-    onNotesChange: (String) -> Unit,
+    actions: FormUiActions,
     modifier: Modifier = Modifier
 ) {
-    // UI-only: survives rotation, NOT business state → rememberSaveable OK
     var showAdvancedHint by rememberSaveable { mutableStateOf(false) }
-
-    // UI-only: OK to lose on rotation → remember is enough
     var localFocusHint by remember { mutableStateOf("Tap a field to edit") }
 
     Column(
@@ -52,13 +44,11 @@ fun ProfileForm(
         Text("Profile form (VM state)")
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Each field is its own composable so changing username
-        // does not needlessly dirty unrelated field layout logic.
         FormTextField(
             value = state.username,
             onValueChange = {
                 localFocusHint = "Editing username"
-                onUsernameChange(it)
+                actions.onUsernameChange(it)
             },
             label = "Username",
             keyboardType = KeyboardType.Text
@@ -67,20 +57,20 @@ fun ProfileForm(
             value = state.email,
             onValueChange = {
                 localFocusHint = "Editing email"
-                onEmailChange(it)
+                actions.onEmailChange(it)
             },
             label = "Email",
             keyboardType = KeyboardType.Email
         )
         FormTextField(
             value = state.company,
-            onValueChange = onCompanyChange,
+            onValueChange = actions.onCompanyChange,
             label = "Company",
             keyboardType = KeyboardType.Text
         )
         FormTextField(
             value = state.notes,
-            onValueChange = onNotesChange,
+            onValueChange = actions.onNotesChange,
             label = "Notes",
             keyboardType = KeyboardType.Text,
             singleLine = false

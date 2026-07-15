@@ -17,32 +17,23 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.example.composebestpractices.state.FormUiState
 import com.example.composebestpractices.state.ListItemUiModel
-import com.example.composebestpractices.state.TableRowUiModel
+import com.example.composebestpractices.state.MiddleUiActions
+import com.example.composebestpractices.state.MiddleUiState
 
 /**
- * MiddleView groups widgets that share related state / update cadence:
- * form (frequent text edits), table (refresh), list (refresh + clicks).
+ * Prefer a small signature:
+ *   MiddleView(state, actions, modifier)
+ * over many individual params.
  *
- * ONE LazyColumn for the whole middle section avoids nested LazyColumn scroll bugs.
- * Separate keyed `item` / `items` slots help Compose skip siblings when inputs match.
+ * Children still receive *slices* so table/list can skip when only the form changes.
  */
 @Composable
 fun MiddleView(
-    form: FormUiState,
-    tableRows: List<TableRowUiModel>,
-    items: List<ListItemUiModel>,
-    loadError: String?,
-    onUsernameChange: (String) -> Unit,
-    onEmailChange: (String) -> Unit,
-    onCompanyChange: (String) -> Unit,
-    onNotesChange: (String) -> Unit,
-    onItemClick: (String) -> Unit,
+    state: MiddleUiState,
+    actions: MiddleUiActions,
     modifier: Modifier = Modifier
 ) {
-    // Scroll position: remembered across recomposition; use rememberSaveable +
-    // LazyListState.Saver if you must restore after process death without VM.
     val listState = rememberLazyListState()
 
     LazyColumn(
@@ -53,18 +44,15 @@ fun MiddleView(
     ) {
         item(key = "form") {
             ProfileForm(
-                state = form,
-                onUsernameChange = onUsernameChange,
-                onEmailChange = onEmailChange,
-                onCompanyChange = onCompanyChange,
-                onNotesChange = onNotesChange
+                state = state.form,
+                actions = actions.form
             )
         }
 
-        if (loadError != null) {
+        if (state.loadError != null) {
             item(key = "error") {
                 Text(
-                    text = "Error: $loadError",
+                    text = "Error: ${state.loadError}",
                     color = MaterialTheme.colorScheme.error,
                     modifier = Modifier.padding(horizontal = 16.dp)
                 )
@@ -72,7 +60,7 @@ fun MiddleView(
         }
 
         item(key = "table") {
-            StatsTable(rows = tableRows)
+            StatsTable(rows = state.tableRows)
         }
 
         item(key = "list-header") {
@@ -84,12 +72,12 @@ fun MiddleView(
         }
 
         items(
-            items = items,
+            items = state.items,
             key = { it.id }
         ) { item ->
             ServiceRow(
                 item = item,
-                onClick = { onItemClick(item.id) },
+                onClick = { actions.onItemClick(item.id) },
                 modifier = Modifier.padding(horizontal = 16.dp)
             )
         }
