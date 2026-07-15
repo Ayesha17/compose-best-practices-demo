@@ -158,6 +158,20 @@ class DemoViewModel(
         }
     }
 
+    /**
+     * TextField inside LazyColumn: keep the typed text in the list item model
+     * (ViewModel), not in remember inside the row. Scrolling off-screen would
+     * otherwise lose local remember state when the item leaves composition.
+     */
+    fun onItemNoteChange(id: String, note: String) {
+        _uiState.update { state ->
+            val updatedItems = state.middle.items.map { item ->
+                if (item.id == id) item.copy(note = note) else item
+            }
+            state.copy(middle = state.middle.copy(items = updatedItems))
+        }
+    }
+
     private suspend fun fetchItemsFromNetwork(): List<ListItemUiModel> =
         withContext(ioDispatcher) {
             delay(350)
@@ -166,7 +180,8 @@ class DemoViewModel(
                     id = "item-$index",
                     title = "Service #${index + 1}",
                     detail = "Plan tier ${(index % 3) + 1}",
-                    amount = "${(index + 1) * 15} SAR"
+                    amount = "${(index + 1) * 15} SAR",
+                    note = ""
                 )
             }
         }

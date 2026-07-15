@@ -38,7 +38,8 @@ fun DemoScreen(
                 onCompanyChange = viewModel::onCompanyChange,
                 onNotesChange = viewModel::onNotesChange
             ),
-            onItemClick = viewModel::onItemClick
+            onItemClick = viewModel::onItemClick,
+            onItemNoteChange = viewModel::onItemNoteChange
         )
     }
     val footerActions = remember(viewModel) {

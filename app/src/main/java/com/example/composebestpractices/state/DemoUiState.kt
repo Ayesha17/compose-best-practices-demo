@@ -37,7 +37,9 @@ data class ListItemUiModel(
     val id: String,
     val title: String,
     val detail: String,
-    val amount: String
+    val amount: String,
+    /** Editable text inside the list row — owned by ViewModel, not by remember in the item. */
+    val note: String = ""
 )
 
 @Immutable
@@ -95,7 +97,8 @@ data class FormUiActions(
 @Stable
 data class MiddleUiActions(
     val form: FormUiActions,
-    val onItemClick: (String) -> Unit
+    val onItemClick: (String) -> Unit,
+    val onItemNoteChange: (id: String, note: String) -> Unit
 )
 
 @Stable
